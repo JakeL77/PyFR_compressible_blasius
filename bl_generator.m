@@ -64,7 +64,7 @@ s = mu_e*rho_e*u_e*x_0;
 % using this to transform similarity wall normal coordinate into physical
 % wall normal coordinate n; nu contains the wall normal similarity values
 % used in the integration
-[nu,n] = coord_transform_integrator(s,u_e,nuFinal,rhoArrayIntermediate);
+[nu,n] = coord_transform_integrator(s,u_e,nuFinal,rhoArrayIntermediate,nuEnd);
 
 % interpolating solution vector onto physical coordinate vector (as yFinal
 % corresponds to nuFinal, not nu)
