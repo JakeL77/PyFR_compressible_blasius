@@ -12,23 +12,24 @@ clear;clc;close all
 %% USER SET FLOW CONDITIONS
 
 c_2 = 110.4; % K, for Sutherland's
-Pr = 0.72; % Prandtl number
+Pr = 0.71; % Prandtl number
 gamma = 1.4; % adiabatic ratio
 
-T_e = 288.0; % K, freestream temp
-M_e = 2.0; % freestream Mach
-u_e = 2.0; % freestream velocity
-mu_e = 1e-3; % freestream viscosity
+T_e = 54.8; % K, freestream temp
+M_e = 7.73; % freestream Mach
+u_e = 7.73; % freestream velocity
+mu_e = 6.24194e-5; % freestream viscosity
 rho_e = 1.4; % freestream density
 
-x_0 = 0.1; % distance along flat plate
+%x_0 = 0.57678; % distance along flat plate
+x_0 = 0.2883;
 
 %% USER SET NEWTON METHOD PARAMETERS
 
-y30InitialGuess = 0.1; % initial guess for y30 boundary condition; 0.1 often works 
+y30InitialGuess = 0.5; % initial guess for y30 boundary condition; 0.1 often works 
 % for supersonic
 
-y40InitialGuess = 3.0; % initial guess for y40 boundary condition; 3.0 often works 
+y40InitialGuess = 10.0; % initial guess for y40 boundary condition; 3.0 often works 
 % for supersonic
 
 derivativeIncrement = 1e-10; % delta for forward differencing 
@@ -53,7 +54,7 @@ nuEnd = 20; % upper integration limit in similarity coordinate
 % continuity integrator to give v, which is the vertical velocity profile 
 % in physical coordinates
 
-deltaX = 1e-5;
+deltaX = 1e-4;
 [~,~,~,nInc,uInc,rhoInc] = bl_generator(y30InitialGuess,y40InitialGuess,...
     derivativeIncrement,newtonTol,nuEnd,c_2,T_e,Pr,gamma,M_e,mu_e,rho_e,u_e,x_0+deltaX);
 
@@ -66,12 +67,13 @@ v = continuity_integrator(n,u,rho,nInc,uInc,rhoInc,deltaX);
 % (thetaIC), incompressible shape factor (HIC), and compressible
 % displacement thickness (deltaStarC)
 % May add compressible momentum thickness and shape factor
-[deltaStarIC,thetaIC,HIC,deltaStarC] = bl_properties(n,uBar,rhoBar);
+[deltaStarIC,thetaIC,HIC,deltaStarC,thetaC] = bl_properties(n,uBar,rhoBar);
 
 % calculates Reynolds numbers based on these parameters
 ReThetaIC = thetaIC*rho_e*u_e/mu_e;
 ReDeltaStarIC = deltaStarIC*rho_e*u_e/mu_e;
 ReDeltaStarC = deltaStarC*rho_e*u_e/mu_e;
+ReThetaC = thetaC*rho_e*u_e/mu_e;
 
 % finding delta 99
 delta99 = interp1(u/u(end),n,0.99);
@@ -81,7 +83,9 @@ delta99 = interp1(u/u(end),n,0.99);
 % generates fits using num2fit, which utilises the MATLAB curve fitting
 % toolbox; velFit, rhoFit, vFit contain anonymous functions, while
 % velFitString etc contain strings suitable for input to PyFR
-[velFit, velFitString, rhoFit, rhoFitString, vFit, vFitString] = num2fit(n,u,rho,v,u_e,rho_e,v(end));
+[velFit, velFitString] = fitArray(n,u,u_e,'sin8',[]);
+[rhoFit, rhoFitString] = fitArray(n,rho,rho_e,'generalLogistic',[1230,66,1.43,7.6]);
+[vFit,vFitString] = fitArray(n,v,v(end),'generalLogisticUpper',[750,38,10,13,0]);
 
 %% CALCULATING FIRST NODE HEIGHT
 
@@ -90,19 +94,20 @@ delta99 = interp1(u/u(end),n,0.99);
 % in PyFR the height of the first cell will not be this first node point,
 % but will depend on the order of the solution polynomial and the point set
 % used
-muBarWall = (rhoBar(1)^1.5)*((1.0+c_2/T_e)/(rhoBar(1)+c_2/T_e));
-muWall = muBarWall*mu_e;
-dudyWall = (u(2)-u(1))/(n(2)-n(1));
-tauWall = muWall*dudyWall;
-uTauWall = sqrt(tauWall/rho(1));
-targetYplus = 1.0;
-nodeHeightWall = muWall*targetYplus/(uTauWall*rho(1));
+muBarWall = (rhoBar(1)^1.5)*((1.0+c_2/T_e)/(rhoBar(1)+c_2/T_e))
+muWall = muBarWall*mu_e
+dudyWall = (u(2)-u(1))/(n(2)-n(1))
+tauWall = muWall*dudyWall
+uTauWall = sqrt(tauWall/rho(1))
+targetYplus = 0.5
+nodeHeightWall = muWall*targetYplus/(uTauWall*rho(1))
 
 %% OUTPUT
 fprintf('Generated boundary layer properties:\n')
 fprintf('Re(theta, incompressible) = %.3f\n',ReThetaIC)
 fprintf('Re(delta, incompressible) = %.3f\n',ReDeltaStarIC)
 fprintf('Re(delta, compressible) = %.3f\n',ReDeltaStarC)
+fprintf('Re(theta, compressible) = %.3f\n',ReThetaC)
 fprintf('Shape factor (incompressible) = %.3f\n',HIC)
 fprintf('99%% thickness = %.3f\n',delta99)
 fprintf('\n')
@@ -147,7 +152,7 @@ figure()
 hold on
 title('Wall normal velocity profile','FontSize',35)
 grid minor
-nPlot = 0:1e-5:0.05;
+nPlot = 0:1e-5:0.08;
 ylim([0 1.5])
 xlim([0 1.1])
 plot(vFit(nPlot)/v(end),nPlot/delta99,'-k')
