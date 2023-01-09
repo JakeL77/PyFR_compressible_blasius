@@ -25,7 +25,8 @@ T_w = 354.8; % K, wall temperature; unused if adiabatic
 %x_0 = 0.57678; % distance along flat plate
 x_0 = 0.2883;
 
-wallCondition = "isothermal"; % or adiabatic
+wallCondition = "isothermal";
+%wallCondition = "adiabatic";
 
 %% USER SET NEWTON METHOD PARAMETERS
 
@@ -94,9 +95,15 @@ delta99 = interp1(u/u(end),n,0.99);
 % generates fits using num2fit, which utilises the MATLAB curve fitting
 % toolbox; velFit, rhoFit, vFit contain anonymous functions, while
 % velFitString etc contain strings suitable for input to PyFR
-[velFit, velFitString] = fitArray(n,u,u_e,'sin8',[]);
-[rhoFit, rhoFitString] = fitArray(n,rho,rho_e,'generalLogistic',[1230,66,1.43,7.6]);
-[vFit,vFitString] = fitArray(n,v,v(end),'generalLogisticUpper',[750,38,10,13,0]);
+if wallCondition == "adiabatic"
+    [velFit, velFitString] = fitArray(n,u,u_e,'sin8',[],0.0);
+    [rhoFit, rhoFitString] = fitArray(n,rho,rho_e,'generalLogistic',[1230,66,1.43,7.6],0.0);
+    [vFit,vFitString] = fitArray(n,v,v(end),'generalLogisticUpper',[750,38,10,13,0],0.0);
+elseif wallCondition == "isothermal"
+    [velFit, velFitString] = fitArray(n,u,u_e,'splitPolySqrt',[0.1,-4.2,130,4.3],0.025);
+    [rhoFit, rhoFitString] = fitArray(n,rho,rho_e,'splitPolyGeneralLogistic',[1230,66,23,1.43,0],0.025);
+    [vFit,vFitString] = fitArray(n,v,v(end),'splitPolyGeneralLogistic',[750,38,10,13,0],0.025);
+end
 
 %% CALCULATING FIRST NODE HEIGHT
 

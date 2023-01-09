@@ -1,7 +1,8 @@
-function [fitFunction, fitString] = fitArray(n,quantityArray,quantityEnd,fitType,startPoints)
+function [fitFunction, fitString] = fitArray(n,quantityArray,quantityEnd,fitType,startPoints,nSplit)
 % quantity end is rhoE, vE, uE etc
 % fitType can be fourier8, sin8, general logistic, general logistic only
 % upper bound
+% nSplit is only used for split fit types
 
 switch fitType
     case 'fourier8'
@@ -153,4 +154,116 @@ switch fitType
         fitString = ['(',num2str(kCoeff),'+((',num2str(upperBound),'-(',num2str(kCoeff),'))/(pow((1+',num2str(qCoeff),...
             '*exp(-',num2str(bCoeff),'*y+',num2str(dCoeff),')),(1/',num2str(vCoeff),'))))',')*0.5*(tanh(-10000000*(y-',num2str(n(end)),'))+1)+',...
             num2str(quantityEnd),'*0.5*(tanh(10000000*(y-',num2str(n(end)),'))+1)'];
+
+    case 'splitPolySqrt'
+        % first doing polynomial fit for lower section
+        % splitting off lower section
+        nLower = n(n<nSplit);
+        quantityArrayLower = quantityArray(n<nSplit);
+        fitFunctionBLlower = fit(nLower,quantityArrayLower,'poly8','Normalize','on');
+        nLowerMean = mean(nLower);
+        nLowerStd = std(nLower);
+        
+        % obtains coefficient values for lower
+        fitCoeffsLower = coeffvalues(fitFunctionBLlower);
+        p1Coeff = fitCoeffsLower(1);
+        p2Coeff = fitCoeffsLower(2);
+        p3Coeff = fitCoeffsLower(3);
+        p4Coeff = fitCoeffsLower(4);
+        p5Coeff = fitCoeffsLower(5);
+        p6Coeff = fitCoeffsLower(6);
+        p7Coeff = fitCoeffsLower(7);
+        p8Coeff = fitCoeffsLower(8);
+        p9Coeff = fitCoeffsLower(9);
+
+        fitFunctionBLlowerAnon = @(x) p1Coeff*((x-nLowerMean)./nLowerStd).^8+...
+        p2Coeff*((x-nLowerMean)./nLowerStd).^7+...
+        p3Coeff*((x-nLowerMean)./nLowerStd).^6+...
+        p4Coeff*((x-nLowerMean)./nLowerStd).^5+... 
+        p5Coeff*((x-nLowerMean)./nLowerStd).^4+...
+        p6Coeff*((x-nLowerMean)./nLowerStd).^3+...
+        p7Coeff*((x-nLowerMean)./nLowerStd).^2+...
+        p8Coeff*((x-nLowerMean)./nLowerStd)+...
+        p9Coeff;
+
+        % sqrt root fit for upper section
+        nUpper = n(not(n<nSplit));
+        quantityArrayUpper = quantityArray(not(n<nSplit));
+        sqrtFitType = fittype( @(a,b,c,d,x) ...
+            c*x-sqrt((c*x+b).^2+a)+d );
+        fitFunctionBLupper = fit(nUpper,quantityArrayUpper,sqrtFitType,'Lower',[0 -inf -inf -inf],...
+            'StartPoint',startPoints,'Display','iter','MaxFunEvals',5000,'MaxIter',5000);
+
+        fitCoeffsUpper = coeffvalues(fitFunctionBLupper);
+        aCoeff = fitCoeffsUpper(1);
+        bCoeff = fitCoeffsUpper(2);
+        cCoeff = fitCoeffsUpper(3);
+        dCoeff = fitCoeffsUpper(4);
+
+        fitFunctionBLupperAnon = @(x) cCoeff*x-sqrt((cCoeff*x+bCoeff).^2+aCoeff)+dCoeff;
+
+        % assembling overall function
+        fitFunction = @(x) fitFunctionBLlowerAnon(x).*0.5.*(tanh(-1e100*(x-nSplit))+1)+...
+            fitFunctionBLupperAnon(x).*(0.5*(tanh(1e100*(x-nSplit))+1) + 0.5*(tanh(-1e100*(x-n(end)))+1) -1)+...
+            quantityEnd*0.5.*(tanh(1e100*(x-n(end)))+1);
+        plot(0:0.001:0.1,fitFunction(0:0.001:0.1))
+        fitString = '';
+    
+    case 'splitPolyGeneralLogistic'
+
+        % first doing polynomial fit for lower section
+        % splitting off lower section
+        nLower = n(n<nSplit);
+        quantityArrayLower = quantityArray(n<nSplit);
+        fitFunctionBLlower = fit(nLower,quantityArrayLower,'poly8','Normalize','on');
+        nLowerMean = mean(nLower);
+        nLowerStd = std(nLower);
+        
+        % obtains coefficient values for lower
+        fitCoeffsLower = coeffvalues(fitFunctionBLlower);
+        p1Coeff = fitCoeffsLower(1);
+        p2Coeff = fitCoeffsLower(2);
+        p3Coeff = fitCoeffsLower(3);
+        p4Coeff = fitCoeffsLower(4);
+        p5Coeff = fitCoeffsLower(5);
+        p6Coeff = fitCoeffsLower(6);
+        p7Coeff = fitCoeffsLower(7);
+        p8Coeff = fitCoeffsLower(8);
+        p9Coeff = fitCoeffsLower(9);
+
+        fitFunctionBLlowerAnon = @(x) p1Coeff*((x-nLowerMean)./nLowerStd).^8+...
+        p2Coeff*((x-nLowerMean)./nLowerStd).^7+...
+        p3Coeff*((x-nLowerMean)./nLowerStd).^6+...
+        p4Coeff*((x-nLowerMean)./nLowerStd).^5+... 
+        p5Coeff*((x-nLowerMean)./nLowerStd).^4+...
+        p6Coeff*((x-nLowerMean)./nLowerStd).^3+...
+        p7Coeff*((x-nLowerMean)./nLowerStd).^2+...
+        p8Coeff*((x-nLowerMean)./nLowerStd)+...
+        p9Coeff;
+
+        % general logistic for upper section
+        nUpper = n(not(n<nSplit));
+        quantityArrayUpper = quantityArray(not(n<nSplit));
+
+        upperBound = quantityEnd;
+        generalLogisticFitType = fittype( @(b,d,q,v,k,x) ...
+            k+((upperBound-k)./((1+q*exp(-b*x+d)).^(1/v))));
+        fitFunctionBLupper = fit(nUpper,quantityArrayUpper,generalLogisticFitType,'Lower',[-inf -inf -inf -inf 0],'Upper',[inf inf inf inf inf],...
+            'StartPoint',startPoints,'Display','iter','MaxFunEvals',5000,'MaxIter',5000);
+        % obtains coefficient values
+        fitCoeffs = coeffvalues(fitFunctionBLupper);
+        bCoeff = fitCoeffs(1);
+        dCoeff = fitCoeffs(2);
+        qCoeff = fitCoeffs(3);
+        vCoeff = fitCoeffs(4);
+        kCoeff = fitCoeffs(5);
+
+        fitFunctionBLupperAnon = @(x) kCoeff+((upperBound-kCoeff)./((1+qCoeff*exp(-bCoeff*x+dCoeff)).^(1/vCoeff)));
+
+        % assembling overall function
+        fitFunction = @(x) fitFunctionBLlowerAnon(x).*0.5.*(tanh(-1e100*(x-nSplit))+1)+...
+            fitFunctionBLupperAnon(x).*(0.5*(tanh(1e100*(x-nSplit))+1) + 0.5*(tanh(-1e100*(x-n(end)))+1) -1)+...
+            quantityEnd*0.5.*(tanh(1e100*(x-n(end)))+1);
+        plot(0:0.001:0.1,fitFunction(0:0.001:0.1))
+        fitString = '';
 end
