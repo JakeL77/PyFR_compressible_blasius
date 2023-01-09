@@ -196,3 +196,42 @@ xlabel('$U/U_e,\rho/\rho_e,V/V_e$','Interpreter','latex','FontSize',35)
 ylabel('$y/\delta_{99}$','Interpreter','latex','FontSize',35)
 legend('$U/U_e$','$\rho/\rho_e$','$V/V_e$','Interpreter','latex','FontSize',35)
 hold off
+
+figure()
+hold on
+title('U in physical coords','FontSize',35)
+grid minor
+nPlot = 0:1e-3:n(end)*1.5;
+ylim([0 inf])
+xlim([0 inf])
+plot(nPlot,velFit(nPlot),'-r')
+set(gca,'FontSize',20)
+xlabel('$y$','Interpreter','latex','FontSize',35)
+ylabel('$V$','Interpreter','latex','FontSize',35)
+hold off
+
+figure()
+hold on
+title('Density in physical coords','FontSize',35)
+grid minor
+nPlot = 0:1e-3:n(end)*1.5;
+ylim([0 inf])
+xlim([0 inf])
+plot(nPlot,rhoFit(nPlot),'-b')
+set(gca,'FontSize',20)
+xlabel('$y$','Interpreter','latex','FontSize',35)
+ylabel('$\rho$','Interpreter','latex','FontSize',35)
+hold off
+
+figure()
+hold on
+title('V in physical coords','FontSize',35)
+grid minor
+nPlot = 0:1e-3:n(end)*1.5;
+ylim([0 inf])
+xlim([0 inf])
+plot(nPlot,vFit(nPlot),'-k')
+set(gca,'FontSize',20)
+xlabel('$y$','Interpreter','latex','FontSize',35)
+ylabel('V$','Interpreter','latex','FontSize',35)
+hold off
