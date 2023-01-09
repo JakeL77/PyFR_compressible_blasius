@@ -20,17 +20,28 @@ M_e = 7.73; % freestream Mach
 u_e = 7.73; % freestream velocity
 mu_e = 6.24194e-5; % freestream viscosity
 rho_e = 1.4; % freestream density
+T_w = 354.8; % K, wall temperature; unused if adiabatic
 
 %x_0 = 0.57678; % distance along flat plate
 x_0 = 0.2883;
 
+wallCondition = "isothermal"; % or adiabatic
+
 %% USER SET NEWTON METHOD PARAMETERS
 
 y30InitialGuess = 0.5; % initial guess for y30 boundary condition; 0.1 often works 
-% for supersonic
+% for supersonic, 0.5 for hyp
+
+% note y40InitialGuess unused if isothermal, y50InitialGuess unused if
+% adiabatic
 
 y40InitialGuess = 10.0; % initial guess for y40 boundary condition; 3.0 often works 
-% for supersonic
+% for supersonic, 10.0 for hyp; as this is actually the adiabatic
+% temperature ratio at the wall, we would of course expect this to increase
+% with Mach; maybe put in a semi-analytical method to estimate this to
+% accelerate convergence?
+
+y50InitialGuess = 3.0; % initial guess for y50 boundary condition
 
 derivativeIncrement = 1e-10; % delta for forward differencing 
 % derivative approximation in bl_generator
@@ -43,8 +54,8 @@ nuEnd = 20; % upper integration limit in similarity coordinate
 
 % nu, uBar, rhoBar gives the profile in similarity solution coordinates, n,
 % u, rho gives the solution in physical coordinates
-[nu,uBar,rhoBar,n,u,rho] = bl_generator(y30InitialGuess,y40InitialGuess,...
-    derivativeIncrement,newtonTol,nuEnd,c_2,T_e,Pr,gamma,M_e,mu_e,rho_e,u_e,x_0);
+[nu,uBar,rhoBar,n,u,rho] = bl_generator(y30InitialGuess,y40InitialGuess,y50InitialGuess,...
+    derivativeIncrement,newtonTol,nuEnd,c_2,T_e,Pr,gamma,M_e,mu_e,rho_e,u_e,T_w,x_0,wallCondition);
 
 %% CALCULATING V
 
@@ -55,8 +66,8 @@ nuEnd = 20; % upper integration limit in similarity coordinate
 % in physical coordinates
 
 deltaX = 1e-4;
-[~,~,~,nInc,uInc,rhoInc] = bl_generator(y30InitialGuess,y40InitialGuess,...
-    derivativeIncrement,newtonTol,nuEnd,c_2,T_e,Pr,gamma,M_e,mu_e,rho_e,u_e,x_0+deltaX);
+[~,~,~,nInc,uInc,rhoInc] = bl_generator(y30InitialGuess,y40InitialGuess,y50InitialGuess,...
+    derivativeIncrement,newtonTol,nuEnd,c_2,T_e,Pr,gamma,M_e,mu_e,rho_e,u_e,T_w,x_0+deltaX,wallCondition);
 
 v = continuity_integrator(n,u,rho,nInc,uInc,rhoInc,deltaX);
 
@@ -94,13 +105,13 @@ delta99 = interp1(u/u(end),n,0.99);
 % in PyFR the height of the first cell will not be this first node point,
 % but will depend on the order of the solution polynomial and the point set
 % used
-muBarWall = (rhoBar(1)^1.5)*((1.0+c_2/T_e)/(rhoBar(1)+c_2/T_e))
-muWall = muBarWall*mu_e
-dudyWall = (u(2)-u(1))/(n(2)-n(1))
-tauWall = muWall*dudyWall
-uTauWall = sqrt(tauWall/rho(1))
-targetYplus = 0.5
-nodeHeightWall = muWall*targetYplus/(uTauWall*rho(1))
+muBarWall = (rhoBar(1)^1.5)*((1.0+c_2/T_e)/(rhoBar(1)+c_2/T_e));
+muWall = muBarWall*mu_e;
+dudyWall = (u(2)-u(1))/(n(2)-n(1));
+tauWall = muWall*dudyWall;
+uTauWall = sqrt(tauWall/rho(1));
+targetYplus = 0.5;
+nodeHeightWall = muWall*targetYplus/(uTauWall*rho(1));
 
 %% OUTPUT
 fprintf('Generated boundary layer properties:\n')
