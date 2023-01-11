@@ -1,11 +1,11 @@
 function [nu,uBar,rhoBar,n,u,rho] = bl_generator(y30InitialGuess,y40InitialGuess,y50InitialGuess,...
-    derivativeIncrement,newtonTol,nuEnd,c_2,T_e,Pr,gamma,M_e,mu_e,rho_e,u_e,T_w,x_0,wall_condition)
+    derivativeIncrement,newtonTol,nuEnd,c_2,T_e,Pr,gamma,M_e,mu_e,rho_e,u_e,T_w,x_0,wall_condition,viscosityLaw)
 
 if wall_condition == "isothermal"
     % Using Newton's method to obtain correct y0 and y40 boundary conditions
 
     % getting initial errors
-    [~,y] = bl_integrator(y30InitialGuess,y40InitialGuess,y50InitialGuess,nuEnd,c_2,T_e,T_w,Pr,gamma,M_e,wall_condition);
+    [~,y] = bl_integrator(y30InitialGuess,y40InitialGuess,y50InitialGuess,nuEnd,c_2,T_e,T_w,Pr,gamma,M_e,wall_condition,viscosityLaw);
     y2old = y(end,2);
     y4old = y(end,4);
     newtonError2 = 1-y2old;
@@ -17,11 +17,11 @@ if wall_condition == "isothermal"
     % Newton loop
     while abs(newtonError2) > newtonTol || abs(newtonError4) > newtonTol
         % increments boundary conditons slightly to get derivatives
-        [~,y] = bl_integrator(y30old+derivativeIncrement,y40InitialGuess,y50old,nuEnd,c_2,T_e,T_w,Pr,gamma,M_e,wall_condition);
+        [~,y] = bl_integrator(y30old+derivativeIncrement,y40InitialGuess,y50old,nuEnd,c_2,T_e,T_w,Pr,gamma,M_e,wall_condition,viscosityLaw);
         y2new1 = y(end,2);
         y4new1 = y(end,4);
 
-        [~,y] = bl_integrator(y30old,y40InitialGuess,y50old+derivativeIncrement,nuEnd,c_2,T_e,T_w,Pr,gamma,M_e,wall_condition);
+        [~,y] = bl_integrator(y30old,y40InitialGuess,y50old+derivativeIncrement,nuEnd,c_2,T_e,T_w,Pr,gamma,M_e,wall_condition,viscosityLaw);
         y2new2 = y(end,2);
         y4new2 = y(end,4);
 
@@ -35,7 +35,7 @@ if wall_condition == "isothermal"
         y50old = y50old+dy0(2);
 
         % finds new errors
-        [nu,y] = bl_integrator(y30old,y40InitialGuess,y50old,nuEnd,c_2,T_e,T_w,Pr,gamma,M_e,wall_condition);
+        [nu,y] = bl_integrator(y30old,y40InitialGuess,y50old,nuEnd,c_2,T_e,T_w,Pr,gamma,M_e,wall_condition,viscosityLaw);
         y2old = y(end,2);
         y4old = y(end,4);
         newtonError2 = 1-y2old;
@@ -62,7 +62,7 @@ elseif wall_condition == "adiabatic"
     % Using Newton's method to obtain correct y30 and y40 boundary conditions
 
     % getting initial errors
-    [~,y] = bl_integrator(y30InitialGuess,y40InitialGuess,y50InitialGuess,nuEnd,c_2,T_e,T_w,Pr,gamma,M_e,wall_condition);
+    [~,y] = bl_integrator(y30InitialGuess,y40InitialGuess,y50InitialGuess,nuEnd,c_2,T_e,T_w,Pr,gamma,M_e,wall_condition,viscosityLaw);
     y2old = y(end,2);
     y4old = y(end,4);
     newtonError2 = 1-y2old;
@@ -74,11 +74,11 @@ elseif wall_condition == "adiabatic"
     % Newton loop
     while abs(newtonError2) > newtonTol || abs(newtonError4) > newtonTol
         % increments boundary conditons slightly to get derivatives
-        [~,y] = bl_integrator(y30old+derivativeIncrement,y40old,y50InitialGuess,nuEnd,c_2,T_e,T_w,Pr,gamma,M_e,wall_condition);
+        [~,y] = bl_integrator(y30old+derivativeIncrement,y40old,y50InitialGuess,nuEnd,c_2,T_e,T_w,Pr,gamma,M_e,wall_condition,viscosityLaw);
         y2new1 = y(end,2);
         y4new1 = y(end,4);
 
-        [~,y] = bl_integrator(y30old,y40old+derivativeIncrement,y50InitialGuess,nuEnd,c_2,T_e,T_w,Pr,gamma,M_e,wall_condition);
+        [~,y] = bl_integrator(y30old,y40old+derivativeIncrement,y50InitialGuess,nuEnd,c_2,T_e,T_w,Pr,gamma,M_e,wall_condition,viscosityLaw);
         y2new2 = y(end,2);
         y4new2 = y(end,4);
 
@@ -92,7 +92,7 @@ elseif wall_condition == "adiabatic"
         y40old = y40old+dy0(2);
 
         % finds new errors
-        [nu,y] = bl_integrator(y30old,y40old,y50InitialGuess,nuEnd,c_2,T_e,T_w,Pr,gamma,M_e,wall_condition);
+        [nu,y] = bl_integrator(y30old,y40old,y50InitialGuess,nuEnd,c_2,T_e,T_w,Pr,gamma,M_e,wall_condition,viscosityLaw);
         y2old = y(end,2);
         y4old = y(end,4);
         newtonError2 = 1-y2old;

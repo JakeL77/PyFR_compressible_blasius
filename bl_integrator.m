@@ -1,4 +1,4 @@
-function [nu,y] = bl_integrator(y30,y40,y50,nuEnd,c_2,T_e,T_w,Pr,gamma,M_e,wall_condition)
+function [nu,y] = bl_integrator(y30,y40,y50,nuEnd,c_2,T_e,T_w,Pr,gamma,M_e,wall_condition,viscosityLaw)
 
     % uses MATLAB ode45 to numerically integrate a similarity solution
     % boundary layer profile for some give y30, y40 boundary conditions
@@ -12,6 +12,6 @@ function [nu,y] = bl_integrator(y30,y40,y50,nuEnd,c_2,T_e,T_w,Pr,gamma,M_e,wall_
         y0 = [0,0,y30,T_w/T_e,y50];
     end
     options = odeset('RelTol',1e-8,'AbsTol',1e-8);
-    [nu,y] = ode45(@(nu,y) similarity_derivative(nu,y,c_2,T_e,Pr,gamma,M_e),nuInterval,y0,...
+    [nu,y] = ode45(@(nu,y) similarity_derivative(nu,y,c_2,T_e,Pr,gamma,M_e,viscosityLaw),nuInterval,y0,...
        options);
 end

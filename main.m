@@ -28,6 +28,9 @@ x_0 = 0.2883;
 wallCondition = "isothermal";
 %wallCondition = "adiabatic";
 
+%viscosityLaw = "constant";
+viscosityLaw = "sutherland";
+
 %% USER SET NEWTON METHOD PARAMETERS
 
 y30InitialGuess = 0.5; % initial guess for y30 boundary condition; 0.1 often works 
@@ -56,7 +59,7 @@ nuEnd = 20; % upper integration limit in similarity coordinate
 % nu, uBar, rhoBar gives the profile in similarity solution coordinates, n,
 % u, rho gives the solution in physical coordinates
 [nu,uBar,rhoBar,n,u,rho] = bl_generator(y30InitialGuess,y40InitialGuess,y50InitialGuess,...
-    derivativeIncrement,newtonTol,nuEnd,c_2,T_e,Pr,gamma,M_e,mu_e,rho_e,u_e,T_w,x_0,wallCondition);
+    derivativeIncrement,newtonTol,nuEnd,c_2,T_e,Pr,gamma,M_e,mu_e,rho_e,u_e,T_w,x_0,wallCondition,viscosityLaw);
 
 %% CALCULATING V
 
@@ -68,7 +71,7 @@ nuEnd = 20; % upper integration limit in similarity coordinate
 
 deltaX = 1e-4;
 [~,~,~,nInc,uInc,rhoInc] = bl_generator(y30InitialGuess,y40InitialGuess,y50InitialGuess,...
-    derivativeIncrement,newtonTol,nuEnd,c_2,T_e,Pr,gamma,M_e,mu_e,rho_e,u_e,T_w,x_0+deltaX,wallCondition);
+    derivativeIncrement,newtonTol,nuEnd,c_2,T_e,Pr,gamma,M_e,mu_e,rho_e,u_e,T_w,x_0+deltaX,wallCondition,viscosityLaw);
 
 v = continuity_integrator(n,u,rho,nInc,uInc,rhoInc,deltaX);
 
@@ -118,7 +121,7 @@ dudyWall = (u(2)-u(1))/(n(2)-n(1));
 tauWall = muWall*dudyWall;
 uTauWall = sqrt(tauWall/rho(1));
 targetYplus = 0.5;
-nodeHeightWall = muWall*targetYplus/(uTauWall*rho(1));
+nodeHeightWall = muWall*targetYplus/(uTauWall*rho(1))
 
 %% OUTPUT
 fprintf('Generated boundary layer properties:\n')
