@@ -25,11 +25,14 @@ T_w = 354.8; % K, wall temperature; unused if adiabatic
 %x_0 = 0.57678; % distance along flat plate
 x_0 = 0.2883;
 
-wallCondition = "isothermal";
 %wallCondition = "adiabatic";
+wallCondition = "isothermal";
 
 %viscosityLaw = "constant";
 viscosityLaw = "sutherland";
+
+%fitSplit = 0.015;
+fitSplit = 0.025;
 
 %% USER SET NEWTON METHOD PARAMETERS
 
@@ -103,9 +106,9 @@ if wallCondition == "adiabatic"
     [rhoFit, rhoFitString] = fitArray(n,rho,rho_e,'generalLogistic',[1230,66,1.43,7.6],0.0);
     [vFit,vFitString] = fitArray(n,v,v(end),'generalLogisticUpper',[750,38,10,13,0],0.0);
 elseif wallCondition == "isothermal"
-    [velFit, velFitString] = fitArray(n,u,u_e,'splitPolySqrt',[0.1,-4.2,130,4.3],0.025);
-    [rhoFit, rhoFitString] = fitArray(n,rho,rho_e,'splitPolyGeneralLogistic',[1230,66,23,1.43,0],0.025);
-    [vFit,vFitString] = fitArray(n,v,v(end),'splitPolyGeneralLogistic',[750,38,10,13,0],0.025);
+    [velFit, velFitString] = fitArray(n,u,u_e,'splitPolySqrt',[0.1,-4.2,130,4.3],fitSplit);
+    [rhoFit, rhoFitString] = fitArray(n,rho,rho_e,'splitPolyGeneralLogistic',[1230,66,23,1.43,0],fitSplit);
+    [vFit,vFitString] = fitArray(n,v,v(end),'splitPolyGeneralLogistic',[750,38,10,13,0],fitSplit);
 end
 
 %% CALCULATING FIRST NODE HEIGHT
@@ -204,20 +207,20 @@ figure()
 hold on
 title('U in physical coords','FontSize',35)
 grid minor
-nPlot = 0:1e-3:n(end)*1.5;
+nPlot = 0:1e-4:n(end)*1.5;
 ylim([0 inf])
 xlim([0 inf])
 plot(nPlot,velFit(nPlot),'-r')
 set(gca,'FontSize',20)
 xlabel('$y$','Interpreter','latex','FontSize',35)
-ylabel('$V$','Interpreter','latex','FontSize',35)
+ylabel('$U$','Interpreter','latex','FontSize',35)
 hold off
 
 figure()
 hold on
 title('Density in physical coords','FontSize',35)
 grid minor
-nPlot = 0:1e-3:n(end)*1.5;
+nPlot = 0:1e-4:n(end)*1.5;
 ylim([0 inf])
 xlim([0 inf])
 plot(nPlot,rhoFit(nPlot),'-b')
@@ -230,11 +233,11 @@ figure()
 hold on
 title('V in physical coords','FontSize',35)
 grid minor
-nPlot = 0:1e-3:n(end)*1.5;
+nPlot = 0:1e-4:n(end)*1.5;
 ylim([0 inf])
 xlim([0 inf])
 plot(nPlot,vFit(nPlot),'-k')
 set(gca,'FontSize',20)
 xlabel('$y$','Interpreter','latex','FontSize',35)
-ylabel('V$','Interpreter','latex','FontSize',35)
+ylabel('$V$','Interpreter','latex','FontSize',35)
 hold off
